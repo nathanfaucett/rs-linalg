@@ -1,0 +1,19 @@
+[package]
+name = "linalg"
+version = "0.1.0"
+authors = ["nathanfaucett <nathanfaucett@gmail.com>"]
+
+keywords = ["linalg", "linear", "algebra"]
+description = "linear algebra"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/nathanfaucett/rs-linalg.git"
+homepage = "https://github.com/nathanfaucett/rs-linalg"
+
+[dependencies]
+array = { git = "https://github.com/nathanfaucett/rs-array.git" }
+one = { git = "https://github.com/nathanfaucett/rs-one.git" }
+zero = { git = "https://github.com/nathanfaucett/rs-zero.git" }
+
+[dev-dependencies]
+mat4 = { git = "https://github.com/nathanfaucett/rs-mat4.git" }
