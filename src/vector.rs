@@ -2,6 +2,9 @@ use core::fmt;
 use core::ops::*;
 
 use array::Array;
+use zero::Zero;
+
+use super::matrix::Matrix;
 
 
 #[derive(Clone)]
@@ -34,13 +37,6 @@ impl<T> Vector<T> {
             data: Array::zeroed(len),
         }
     }
-    #[inline(always)]
-    pub fn uninitialized(len: usize) -> Self {
-        assert!(len != 0);
-        Vector {
-            data: Array::uninitialized(len),
-        }
-    }
 }
 
 impl<T> Deref for Vector<T> {
@@ -66,6 +62,7 @@ impl<T: PartialEq> PartialEq for Vector<T> {
 }
 
 impl<T: fmt::Debug> fmt::Debug for Vector<T> {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&**self, f)
     }
@@ -82,12 +79,13 @@ macro_rules! impl_vector_bin_ops {
         {
             type Output = Vector<T>;
 
+            #[inline]
             fn $bin_fn(self, other: &'b Vector<T>) -> Self::Output {
                 let len = self.len();
 
                 assert!(len == other.len(), "a * b, a's length does not match b's length");
 
-                let mut out = Vector::uninitialized(len);
+                let mut out = Vector::zeroed(len);
 
                 for i in 0..len {
                     out[i] = &self[i] $bin_op &other[i];
@@ -100,6 +98,7 @@ macro_rules! impl_vector_bin_ops {
         impl<'a, T> $AssignTrait<&'a Vector<T>> for Vector<T>
             where T: $AssignTrait<&'a T>,
         {
+            #[inline]
             fn $assign_fn(&mut self, other: &'a Vector<T>) {
                 let len = self.len();
 
@@ -118,3 +117,32 @@ impl_vector_bin_ops!(Sub, sub, -, SubAssign, sub_assign, -=);
 impl_vector_bin_ops!(Mul, mul, *, MulAssign, mul_assign, *=);
 impl_vector_bin_ops!(Div, div, /, DivAssign, div_assign, /=);
 impl_vector_bin_ops!(Rem, rem, %, RemAssign, rem_assign, %=);
+
+
+impl<'a, 'b, T> Mul<&'b Matrix<T>> for &'a Vector<T>
+    where T: Zero + AddAssign<T>,
+          &'a T: Add<&'b T, Output = T> +
+                 Mul<&'b T, Output = T>
+{
+    type Output = Vector<T>;
+
+    #[inline]
+    fn mul(self, other: &'b Matrix<T>) -> Vector<T> {
+        let len = self.len();
+        assert!(len == other.rows(), "v * M, v's length does not match M's rows");
+        let cols = other.cols();
+        let mut out = Vector::zeroed(len);
+
+        for i in 0..len {
+            let mut out_value = T::zero();
+
+            for j in 0..cols {
+                out_value += &self[i] * other.col_value(i, j);
+            }
+
+            out[i] = out_value;
+        }
+
+        out
+    }
+}

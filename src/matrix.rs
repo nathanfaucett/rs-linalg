@@ -67,20 +67,6 @@ impl<T> Matrix<T> {
             data: data,
         }
     }
-    #[inline]
-    pub fn uninitialized(rows: usize, cols: usize) -> Self {
-        let mut data = Vector::zeroed(rows);
-
-        for row in data.iter_mut() {
-            *row = Vector::uninitialized(cols);
-        }
-
-        Matrix {
-            rows: rows,
-            cols: cols,
-            data: data,
-        }
-    }
     #[inline(always)]
     pub fn rows(&self) -> usize { self.rows }
     #[inline(always)]
@@ -126,11 +112,12 @@ impl<'a, 'b, T> Mul<&'b Matrix<T>> for &'a Matrix<T>
 {
     type Output = Matrix<T>;
 
+    #[inline]
     fn mul(self, other: &'b Matrix<T>) -> Matrix<T> {
-        assert!(self.cols() == other.rows(), "A * B, A's columns do not match B's rows");
+        assert!(self.cols() == other.rows(), "A * B, A's columns does not match B's rows");
         let new_rows = self.rows();
         let new_cols = other.cols();
-        let mut out = Matrix::uninitialized(new_rows, new_cols);
+        let mut out = Matrix::zeroed(new_rows, new_cols);
 
         for i in 0..new_rows {
             for j in 0..new_cols {
@@ -140,6 +127,39 @@ impl<'a, 'b, T> Mul<&'b Matrix<T>> for &'a Matrix<T>
                 let mut offset = 0;
                 for value in row.iter() {
                     out_value += value * other.col_value(j, offset);
+                    offset += 1;
+                }
+
+                out[i][j] = out_value;
+            }
+        }
+
+        out
+    }
+}
+
+impl<'a, 'b, T> Mul<&'b Vector<T>> for &'a Matrix<T>
+    where T: Zero + AddAssign<T>,
+          &'a T: Add<&'b T, Output = T> +
+                 Mul<&'b T, Output = T>
+{
+    type Output = Matrix<T>;
+
+    #[inline]
+    fn mul(self, other: &'b Vector<T>) -> Matrix<T> {
+        assert!(self.rows() == other.len(), "M * v, M's rows does not match v's length");
+        let new_rows = self.rows();
+        let new_cols = self.cols();
+        let mut out = Matrix::zeroed(new_rows, new_cols);
+
+        for i in 0..new_rows {
+            for j in 0..new_cols {
+                let mut out_value = T::zero();
+                let row = self.row(i);
+
+                let mut offset = 0;
+                for value in row.iter() {
+                    out_value += value * &other[offset];
                     offset += 1;
                 }
 
