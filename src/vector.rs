@@ -62,87 +62,113 @@ impl<T: PartialEq> PartialEq for Vector<T> {
 }
 
 impl<T: fmt::Debug> fmt::Debug for Vector<T> {
-    #[inline]
+    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&**self, f)
     }
 }
 
+impl<'a, 'b, T> Vector<T>
+    where T: 'a + 'b + Zero + AddAssign<T>,
+          &'a T: Add<&'b T, Output = T> +
+                 Mul<&'b T, Output = T>,
+{
+    #[inline]
+    pub fn dot(&'a self, other: &'b Vector<T>) -> T {
+        let len = self.len();
+        let other_len = other.len();
+        assert!(len == other_len, "a * b, a's length does not match b's length");
+        let mut out = T::zero();
 
-macro_rules! impl_vector_bin_ops {
-    (
-        $BinTrait: ident, $bin_fn: ident, $bin_op: tt,
-        $AssignTrait: ident, $assign_fn: ident, $assign_op: tt
-    ) => (
-        impl<'a, 'b, T> $BinTrait<&'b Vector<T>> for &'a Vector<T>
-            where &'a T: $BinTrait<&'b T, Output = T>
-        {
-            type Output = Vector<T>;
+        for i in 0..len {
+            out += &self[i] * &other[i];
+    	}
 
-            #[inline]
-            fn $bin_fn(self, other: &'b Vector<T>) -> Self::Output {
-                let len = self.len();
+        out
+    }
+}
+impl<'out, 'a, 'b, T> Vector<T>
+    where T: 'a + 'b + AddAssign<T>,
+          &'a T: Add<&'b T, Output = T> +
+                 Mul<&'b T, Output = T>,
+{
+    #[inline]
+    pub fn mul(out: &'out mut Vector<T>, a: &'a Vector<T>, b: &'b Vector<T>) -> &'out mut Vector<T> {
+        let a_len = a.len();
+        let b_len = b.len();
+        assert!(a_len == b_len, "a * b, a's length does not match b's length");
 
-                assert!(len == other.len(), "a * b, a's length does not match b's length");
+        for i in 0..a_len {
+            out[i] += &a[i] * &b[i];
+    	}
+        out
+    }
+    #[inline]
+    pub fn mmul(out: &'out mut Vector<T>, v: &'a Vector<T>, m: &'b Matrix<T>) -> &'out mut Vector<T> {
+        let len = v.len();
+        let cols = m.cols();
+        let rows = m.rows();
+        assert!(len == cols, "v * A, v's length does not match A's columns");
 
-                let mut out = Vector::zeroed(len);
-
-                for i in 0..len {
-                    out[i] = &self[i] $bin_op &other[i];
-                }
-
-                out
+        for i in 0..cols {
+            for j in 0..rows {
+                out[i] += &v[i] * &m[i][j];
             }
         }
+        out
+    }
+    #[inline]
+    pub fn smul(out: &'out mut Vector<T>, v: &'a Vector<T>, s: &'b T) -> &'out mut Vector<T> {
+        let len = v.len();
 
-        impl<'a, T> $AssignTrait<&'a Vector<T>> for Vector<T>
-            where T: $AssignTrait<&'a T>,
-        {
-            #[inline]
-            fn $assign_fn(&mut self, other: &'a Vector<T>) {
-                let len = self.len();
-
-                assert!(len == other.len(), "a * b, a's length does not match b's length");
-
-                for i in 0..len {
-                    self[i] $assign_op &other[i];
-                }
-            }
+        for i in 0..len {
+            out[i] += &v[i] * s;
         }
-    )
+        out
+    }
 }
 
-impl_vector_bin_ops!(Add, add, +, AddAssign, add_assign, +=);
-impl_vector_bin_ops!(Sub, sub, -, SubAssign, sub_assign, -=);
-impl_vector_bin_ops!(Mul, mul, *, MulAssign, mul_assign, *=);
-impl_vector_bin_ops!(Div, div, /, DivAssign, div_assign, /=);
-impl_vector_bin_ops!(Rem, rem, %, RemAssign, rem_assign, %=);
-
-
-impl<'a, 'b, T> Mul<&'b Matrix<T>> for &'a Vector<T>
-    where T: Zero + AddAssign<T>,
+impl<'a, 'b, T> Mul<&'b Vector<T>> for  &'a Vector<T>
+    where T: AddAssign<T>,
           &'a T: Add<&'b T, Output = T> +
-                 Mul<&'b T, Output = T>
+                 Mul<&'b T, Output = T>,
 {
     type Output = Vector<T>;
 
-    #[inline]
-    fn mul(self, other: &'b Matrix<T>) -> Vector<T> {
-        let len = self.len();
-        assert!(len == other.rows(), "v * M, v's length does not match M's rows");
-        let cols = other.cols();
-        let mut out = Vector::zeroed(len);
+    #[inline(always)]
+    fn mul(self, other: &'b Vector<T>) -> Self::Output {
+        let mut out = Vector::zeroed(self.len());
+        Vector::mul(&mut out, self, other);
+        out
+    }
+}
 
-        for i in 0..len {
-            let mut out_value = T::zero();
+impl<'a, 'b, T> Mul<&'b Matrix<T>> for  &'a Vector<T>
+    where T: AddAssign<T>,
+          &'a T: Add<&'b T, Output = T> +
+                 Mul<&'b T, Output = T>,
+{
+    type Output = Vector<T>;
 
-            for j in 0..cols {
-                out_value += &self[i] * other.col_value(i, j);
-            }
+    #[inline(always)]
+    fn mul(self, other: &'b Matrix<T>) -> Self::Output {
+        let mut out = Vector::zeroed(self.len());
+        Vector::mmul(&mut out, self, other);
+        out
+    }
+}
 
-            out[i] = out_value;
-        }
+impl<'a, 'b, T> Mul<&'b T> for &'a Vector<T>
+    where T: AddAssign<T>,
+          &'a T: Add<&'b T, Output = T> +
+                 Mul<&'b T, Output = T>,
+{
+    type Output = Vector<T>;
 
+    #[inline(always)]
+    fn mul(self, s: &'b T) -> Self::Output {
+        let mut out = Vector::zeroed(self.len());
+        Vector::smul(&mut out, self, s);
         out
     }
 }

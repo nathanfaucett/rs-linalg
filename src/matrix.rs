@@ -2,7 +2,6 @@ use core::fmt;
 use core::ops::*;
 
 use one::One;
-use zero::Zero;
 
 use super::vector::Vector;
 
@@ -17,10 +16,10 @@ pub struct Matrix<T> {
 impl<T: Default> Matrix<T> {
     #[inline]
     pub fn new(rows: usize, cols: usize) -> Self {
-        let mut data = Vector::zeroed(rows);
+        let mut data = Vector::zeroed(cols);
 
-        for row in data.iter_mut() {
-            *row = Vector::new(cols);
+        for col in data.iter_mut() {
+            *col = Vector::new(rows);
         }
 
         Matrix {
@@ -34,13 +33,13 @@ impl<T: Default> Matrix<T> {
 impl<T: One> Matrix<T> {
     #[inline]
     pub fn identity(rows: usize, cols: usize) -> Self {
-        let mut data = Vector::zeroed(rows);
+        let mut data = Vector::zeroed(cols);
 
         let mut i = 0;
-        for row in data.iter_mut() {
-            let mut new_row = Vector::zeroed(cols);
-            new_row[i] = T::one();
-            *row = new_row;
+        for col in data.iter_mut() {
+            let mut new_col = Vector::zeroed(rows);
+            new_col[i] = T::one();
+            *col = new_col;
             i += 1;
         }
 
@@ -55,10 +54,10 @@ impl<T: One> Matrix<T> {
 impl<T> Matrix<T> {
     #[inline]
     pub fn zeroed(rows: usize, cols: usize) -> Self {
-        let mut data = Vector::zeroed(rows);
+        let mut data = Vector::zeroed(cols);
 
-        for row in data.iter_mut() {
-            *row = Vector::zeroed(cols);
+        for col in data.iter_mut() {
+            *col = Vector::zeroed(rows);
         }
 
         Matrix {
@@ -71,15 +70,6 @@ impl<T> Matrix<T> {
     pub fn rows(&self) -> usize { self.rows }
     #[inline(always)]
     pub fn cols(&self) -> usize { self.cols }
-
-    #[inline(always)]
-    pub fn row(&self, index: usize) -> &Vector<T> {
-        &self[index]
-    }
-    #[inline(always)]
-    pub fn col_value(&self, index: usize, offset:usize) -> &T {
-        &self[index][offset]
-    }
 }
 
 impl<T> Deref for Matrix<T> {
@@ -105,68 +95,68 @@ impl<T: fmt::Debug> fmt::Debug for Matrix<T> {
 }
 
 
-impl<'a, 'b, T> Mul<&'b Matrix<T>> for &'a Matrix<T>
-    where T: Zero + AddAssign<T>,
+impl<'out, 'a, 'b, T> Matrix<T>
+    where T: 'a + 'b + AddAssign<T>,
           &'a T: Add<&'b T, Output = T> +
-                 Mul<&'b T, Output = T>
+                 Mul<&'b T, Output = T>,
 {
-    type Output = Matrix<T>;
-
     #[inline]
-    fn mul(self, other: &'b Matrix<T>) -> Matrix<T> {
-        assert!(self.cols() == other.rows(), "A * B, A's columns does not match B's rows");
-        let new_rows = self.rows();
-        let new_cols = other.cols();
-        let mut out = Matrix::zeroed(new_rows, new_cols);
+    pub fn mul(out: &'out mut Matrix<T>, a: &'a Matrix<T>, b: &'b Matrix<T>) -> &'out mut Matrix<T> {
+        let a_cols = a.cols();
+        let a_rows = a.rows();
+        let b_cols = b.cols();
+        let b_rows = b.rows();
+        assert!(a_cols == b_rows, "A * B, A's columns does not match B's rows");
 
-        for i in 0..new_rows {
-            for j in 0..new_cols {
-                let mut out_value = T::zero();
-                let row = self.row(i);
+        for i in 0..a_rows {
+    		for j in 0..b_cols {
+    			for k in 0..b_cols {
+    				out[i][j] += &a[i][k] * &b[k][j];
+    			}
+    		}
+    	}
+        out
+    }
+    #[inline]
+    pub fn smul(out: &'out mut Matrix<T>, m: &'a Matrix<T>, s: &'b T) -> &'out mut Matrix<T> {
+        let rows = m.rows();
+        let cols = m.cols();
 
-                let mut offset = 0;
-                for value in row.iter() {
-                    out_value += value * other.col_value(j, offset);
-                    offset += 1;
-                }
-
-                out[i][j] = out_value;
-            }
-        }
-
+        for i in 0..rows {
+    		for j in 0..cols {
+    			out[i][j] += &m[i][j] * s;
+    		}
+    	}
         out
     }
 }
 
-impl<'a, 'b, T> Mul<&'b Vector<T>> for &'a Matrix<T>
-    where T: Zero + AddAssign<T>,
+impl<'a, 'b, T> Mul<&'b Matrix<T>> for  &'a Matrix<T>
+    where T: AddAssign<T>,
           &'a T: Add<&'b T, Output = T> +
-                 Mul<&'b T, Output = T>
+                 Mul<&'b T, Output = T>,
 {
     type Output = Matrix<T>;
 
-    #[inline]
-    fn mul(self, other: &'b Vector<T>) -> Matrix<T> {
-        assert!(self.rows() == other.len(), "M * v, M's rows does not match v's length");
-        let new_rows = self.rows();
-        let new_cols = self.cols();
-        let mut out = Matrix::zeroed(new_rows, new_cols);
+    #[inline(always)]
+    fn mul(self, other: &'b Matrix<T>) -> Self::Output {
+        let mut out = Matrix::zeroed(self.rows(), other.cols());
+        Matrix::mul(&mut out, self, other);
+        out
+    }
+}
 
-        for i in 0..new_rows {
-            for j in 0..new_cols {
-                let mut out_value = T::zero();
-                let row = self.row(i);
+impl<'a, 'b, T> Mul<&'b T> for  &'a Matrix<T>
+    where T: AddAssign<T>,
+          &'a T: Add<&'b T, Output = T> +
+                 Mul<&'b T, Output = T>,
+{
+    type Output = Matrix<T>;
 
-                let mut offset = 0;
-                for value in row.iter() {
-                    out_value += value * &other[offset];
-                    offset += 1;
-                }
-
-                out[i][j] = out_value;
-            }
-        }
-
+    #[inline(always)]
+    fn mul(self, s: &'b T) -> Self::Output {
+        let mut out = Matrix::zeroed(self.rows(), self.cols());
+        Matrix::smul(&mut out, self, s);
         out
     }
 }

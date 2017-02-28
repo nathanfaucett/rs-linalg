@@ -14,8 +14,8 @@ use linalg::*;
 
 #[bench]
 fn bench_matrix_mul(b: &mut Bencher) {
-    let m0 = Matrix::<usize>::identity(4, 4);
-    let m1 = Matrix::<usize>::identity(4, 4);
+    let m0: Matrix<usize> = Matrix::identity(4, 4);
+    let m1: Matrix<usize> = Matrix::identity(4, 4);
 
     b.iter(move || {
         &m0 * &m1;
