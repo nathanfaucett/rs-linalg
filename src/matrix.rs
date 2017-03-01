@@ -13,6 +13,9 @@ pub struct Matrix<T> {
     data: Vector<Vector<T>>,
 }
 
+unsafe impl<T: Send> Send for Matrix<T> {}
+unsafe impl<T: Sync> Sync for Matrix<T> {}
+
 impl<T: Default> Matrix<T> {
     #[inline]
     pub fn new(rows: usize, cols: usize) -> Self {
@@ -66,6 +69,9 @@ impl<T> Matrix<T> {
             data: data,
         }
     }
+}
+
+impl<T> Matrix<T> {
     #[inline(always)]
     pub fn rows(&self) -> usize { self.rows }
     #[inline(always)]

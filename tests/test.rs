@@ -40,7 +40,7 @@ fn test_mul_vector_vector() {
 fn test_mul_vector_matrix() {
     let a: Vector<usize> = vec_zeros(3);
     let b: Matrix<usize> = Matrix::identity(3, 3);
-    let c: Vector<usize> = Vector::zeroed(3);
+    let c: Vector<usize> = Vector::new(3);
     let d: Vector<usize> = &a * &b;
     assert_eq!(d, c);
 }
@@ -64,15 +64,15 @@ fn test_dot_vectors() {
 }
 
 
-fn vec_zeros<T: Zero>(count: usize) -> Vector<T> {
-    let mut v = Vector::zeroed(count);
+fn vec_zeros<T: Default + Zero>(count: usize) -> Vector<T> {
+    let mut v = Vector::new(count);
     for i in 0..count {
         v[i] = T::zero();
     }
     v
 }
-fn vec_ones<T: One>(count: usize) -> Vector<T> {
-    let mut v = Vector::zeroed(count);
+fn vec_ones<T: Default + One>(count: usize) -> Vector<T> {
+    let mut v = Vector::new(count);
     for i in 0..count {
         v[i] = T::one();
     }

@@ -12,6 +12,9 @@ pub struct Vector<T> {
     data: Array<T>,
 }
 
+unsafe impl<T: Send> Send for Vector<T> {}
+unsafe impl<T: Sync> Sync for Vector<T> {}
+
 impl<T: Default> Vector<T> {
     #[inline(always)]
     pub fn new(len: usize) -> Self {
@@ -19,13 +22,6 @@ impl<T: Default> Vector<T> {
         Vector {
             data: Array::new(len),
         }
-    }
-}
-
-impl<T: Default> Default for Vector<T> {
-    #[inline(always)]
-    fn default() -> Self {
-        Vector::new(1)
     }
 }
 
