@@ -62,6 +62,40 @@ fn test_dot_vectors() {
     let c = a.dot(&b);
     assert_eq!(c, 3);
 }
+#[test]
+fn test_add_vectors() {
+    let a: Vector<usize> = vec_ones(3);
+    let b: Vector<usize> = vec_ones(3);
+    let c = &a + &b;
+    assert_eq!(c[0], 2);
+    assert_eq!(c[1], 2);
+    assert_eq!(c[2], 2);
+}
+#[test]
+fn test_add_vector_scale() {
+    let a: Vector<usize> = vec_ones(3);
+    let c = &a + &1;
+    assert_eq!(c[0], 2);
+    assert_eq!(c[1], 2);
+    assert_eq!(c[2], 2);
+}
+#[test]
+fn test_sub_vectors() {
+    let a: Vector<usize> = vec_ones(3);
+    let b: Vector<usize> = vec_ones(3);
+    let c = &a - &b;
+    assert_eq!(c[0], 0);
+    assert_eq!(c[1], 0);
+    assert_eq!(c[2], 0);
+}
+#[test]
+fn test_sub_vector_scale() {
+    let a: Vector<usize> = vec_ones(3);
+    let c = &a - &1;
+    assert_eq!(c[0], 0);
+    assert_eq!(c[1], 0);
+    assert_eq!(c[2], 0);
+}
 
 
 fn vec_zeros<T: Default + Zero>(count: usize) -> Vector<T> {

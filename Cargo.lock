@@ -1,0 +1,131 @@
+[root]
+name = "linalg"
+version = "0.1.0"
+dependencies = [
+ "array 0.1.0 (git+https://github.com/nathanfaucett/rs-array.git)",
+ "mat4 0.1.0 (git+https://github.com/nathanfaucett/rs-mat4.git)",
+ "one 0.1.0 (git+https://github.com/nathanfaucett/rs-one.git)",
+ "zero 0.1.0 (git+https://github.com/nathanfaucett/rs-zero.git)",
+]
+
+[[package]]
+name = "approx_eq"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-approx_eq.git#be4ca1cc77c82376063ee3638204e84234022f10"
+dependencies = [
+ "zero 0.1.0 (git+https://github.com/nathanfaucett/rs-zero.git)",
+]
+
+[[package]]
+name = "array"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-array.git#0fb5f7d2c6b291728d8f3a8d76cd671601622c63"
+dependencies = [
+ "collection_traits 0.1.0 (git+https://github.com/nathanfaucett/rs-collection_traits)",
+]
+
+[[package]]
+name = "bounded"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-bounded.git#359c91bf92b85ab39937480d3785659b5a5ffb14"
+
+[[package]]
+name = "collection_traits"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-collection_traits#0fe9149febf33e7049ae679adbe55e12d9c56b01"
+
+[[package]]
+name = "from_primitive"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-from_primitive.git#f24b96f0f6bda983feed431a40a75408120db1d4"
+
+[[package]]
+name = "mat4"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-mat4.git#3f562889ca3fa4b2d576a05aae86edf1d684139e"
+dependencies = [
+ "approx_eq 0.1.0 (git+https://github.com/nathanfaucett/rs-approx_eq.git)",
+ "num 0.1.0 (git+https://github.com/nathanfaucett/rs-num.git)",
+ "signed 0.1.0 (git+https://github.com/nathanfaucett/rs-signed.git)",
+ "vec3 0.1.0 (git+https://github.com/nathanfaucett/rs-vec3.git)",
+]
+
+[[package]]
+name = "num"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-num.git#d0599f2afa44ed910326b80d0397d4b6d3d3bb12"
+dependencies = [
+ "bounded 0.1.0 (git+https://github.com/nathanfaucett/rs-bounded.git)",
+ "from_primitive 0.1.0 (git+https://github.com/nathanfaucett/rs-from_primitive.git)",
+ "one 0.1.0 (git+https://github.com/nathanfaucett/rs-one.git)",
+ "round 0.1.0 (git+https://github.com/nathanfaucett/rs-round.git)",
+ "sqrt 0.1.0 (git+https://github.com/nathanfaucett/rs-sqrt.git)",
+ "to_primitive 0.1.0 (git+https://github.com/nathanfaucett/rs-to_primitive.git)",
+ "trig 0.1.0 (git+https://github.com/nathanfaucett/rs-trig.git)",
+ "zero 0.1.0 (git+https://github.com/nathanfaucett/rs-zero.git)",
+]
+
+[[package]]
+name = "one"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-one.git#ad032c6a1a18ccff86b975183729f349501d46f6"
+
+[[package]]
+name = "round"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-round.git#b21c26a379adecc0acab2b1a23338308222cce43"
+
+[[package]]
+name = "signed"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-signed.git#b4ff82bc9fd1cfbfd72e09cd1f5e331b0f3a8e18"
+dependencies = [
+ "num 0.1.0 (git+https://github.com/nathanfaucett/rs-num.git)",
+]
+
+[[package]]
+name = "sqrt"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-sqrt.git#578809a2b8277417c606e07c307a080f795759c7"
+
+[[package]]
+name = "to_primitive"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-to_primitive.git#83095e5c8fddd881b45e23e70833b0c823b765de"
+
+[[package]]
+name = "trig"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-trig.git#ae7fb44e389b52dc0931363625a9bb2dd80ab955"
+
+[[package]]
+name = "vec3"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-vec3.git#dd631802738abf2567e2bda291e7e6d6f045eec5"
+dependencies = [
+ "approx_eq 0.1.0 (git+https://github.com/nathanfaucett/rs-approx_eq.git)",
+ "num 0.1.0 (git+https://github.com/nathanfaucett/rs-num.git)",
+ "signed 0.1.0 (git+https://github.com/nathanfaucett/rs-signed.git)",
+]
+
+[[package]]
+name = "zero"
+version = "0.1.0"
+source = "git+https://github.com/nathanfaucett/rs-zero.git#414beceb348ab6dc1b1b7d1a433c887731510d67"
+
+[metadata]
+"checksum approx_eq 0.1.0 (git+https://github.com/nathanfaucett/rs-approx_eq.git)" = "<none>"
+"checksum array 0.1.0 (git+https://github.com/nathanfaucett/rs-array.git)" = "<none>"
+"checksum bounded 0.1.0 (git+https://github.com/nathanfaucett/rs-bounded.git)" = "<none>"
+"checksum collection_traits 0.1.0 (git+https://github.com/nathanfaucett/rs-collection_traits)" = "<none>"
+"checksum from_primitive 0.1.0 (git+https://github.com/nathanfaucett/rs-from_primitive.git)" = "<none>"
+"checksum mat4 0.1.0 (git+https://github.com/nathanfaucett/rs-mat4.git)" = "<none>"
+"checksum num 0.1.0 (git+https://github.com/nathanfaucett/rs-num.git)" = "<none>"
+"checksum one 0.1.0 (git+https://github.com/nathanfaucett/rs-one.git)" = "<none>"
+"checksum round 0.1.0 (git+https://github.com/nathanfaucett/rs-round.git)" = "<none>"
+"checksum signed 0.1.0 (git+https://github.com/nathanfaucett/rs-signed.git)" = "<none>"
+"checksum sqrt 0.1.0 (git+https://github.com/nathanfaucett/rs-sqrt.git)" = "<none>"
+"checksum to_primitive 0.1.0 (git+https://github.com/nathanfaucett/rs-to_primitive.git)" = "<none>"
+"checksum trig 0.1.0 (git+https://github.com/nathanfaucett/rs-trig.git)" = "<none>"
+"checksum vec3 0.1.0 (git+https://github.com/nathanfaucett/rs-vec3.git)" = "<none>"
+"checksum zero 0.1.0 (git+https://github.com/nathanfaucett/rs-zero.git)" = "<none>"
