@@ -2,6 +2,7 @@ use core::fmt;
 use core::ops::*;
 
 use one::One;
+use zero::Zero;
 
 use super::vector::Vector;
 
@@ -19,10 +20,10 @@ unsafe impl<T: Sync> Sync for Matrix<T> {}
 impl<T: Default> Matrix<T> {
     #[inline]
     pub fn new(rows: usize, cols: usize) -> Self {
-        let mut data = Vector::zeroed(cols);
+        let mut data = Vector::zeroed(rows);
 
-        for col in data.iter_mut() {
-            *col = Vector::new(rows);
+        for row in data.iter_mut() {
+            *row = Vector::new(cols);
         }
 
         Matrix {
@@ -36,13 +37,13 @@ impl<T: Default> Matrix<T> {
 impl<T: One> Matrix<T> {
     #[inline]
     pub fn identity(rows: usize, cols: usize) -> Self {
-        let mut data = Vector::zeroed(cols);
+        let mut data = Vector::zeroed(rows);
 
         let mut i = 0;
-        for col in data.iter_mut() {
-            let mut new_col = Vector::zeroed(rows);
-            new_col[i] = T::one();
-            *col = new_col;
+        for row in data.iter_mut() {
+            let mut new_row = Vector::zeroed(cols);
+            new_row[i] = T::one();
+            *row = new_row;
             i += 1;
         }
 
@@ -58,10 +59,10 @@ impl<T> Matrix<T> {
 
     #[inline]
     pub fn zeroed(rows: usize, cols: usize) -> Self {
-        let mut data = Vector::zeroed(cols);
+        let mut data = Vector::zeroed(rows);
 
-        for col in data.iter_mut() {
-            *col = Vector::zeroed(rows);
+        for row in data.iter_mut() {
+            *row = Vector::zeroed(cols);
         }
 
         Matrix {
@@ -86,8 +87,9 @@ impl<T> Matrix<T> {
     }
 }
 
-impl<T: Clone> Matrix<T> {
-
+impl<T> Matrix<T>
+    where T: Clone,
+{
     #[inline]
     pub fn transpose(&self) -> Self {
         let mut matrix = Matrix::<T>::zeroed(self.cols, self.rows);
@@ -99,6 +101,150 @@ impl<T: Clone> Matrix<T> {
         }
 
         matrix
+    }
+}
+
+impl<T> Matrix<T>
+    where T: Zero + Clone + AddAssign<T>,
+          for<'a> T: Mul<&'a T, Output = T>,
+          for<'a> &'a T: Neg<Output = T>,
+          for<'a, 'b> &'a T: Mul<&'b T, Output = T> +
+                             Sub<&'b T, Output = T>,
+{
+    #[inline(always)]
+    pub fn determinant(&self) -> T {
+        if self.rows == self.cols {
+            determinant::<T>(&self.data, self.rows)
+        } else {
+            panic!("can not find the determinant of a {}x{} matrix", self.rows, self.cols)
+        }
+    }
+}
+
+impl<T> Matrix<T>
+    where T: One + Zero + Clone + AddAssign<T>,
+          for<'a> T: Mul<&'a T, Output = T>,
+          for<'a> &'a T: PartialEq + Neg<Output = T>,
+          for<'a, 'b> &'a T: Div<&'b T, Output = T> +
+                             Mul<&'b T, Output = T> +
+                             Sub<&'b T, Output = T>,
+{
+    #[inline(always)]
+    pub fn inverse(&self) -> Matrix<T> {
+        if self.rows == self.cols {
+            let mut out = Matrix::<T>::zeroed(self.rows(), self.cols());
+            inverse::<T>(&mut out.data, &self.data, self.rows);
+            out
+        } else {
+            panic!("can not find the determinant of a {}x{} matrix", self.rows, self.cols)
+        }
+    }
+}
+
+#[inline]
+fn get_cofactor<T>(out: &mut Vector<Vector<T>>, m: &Vector<Vector<T>>, p: usize, q: usize, size: usize)
+    where T: Clone,
+{
+    let mut i = 0;
+    let mut j = 0;
+
+    for row in 0..size {
+        for col in 0..size {
+            if row != p && col != q {
+                out[i][j] = m[row][col].clone();
+                j += 1;
+
+                if j == size - 1 {
+                    j = 0;
+                    i += 1;
+                }
+            }
+        }
+    }
+}
+
+#[inline]
+fn determinant<T>(m: &Vector<Vector<T>>, size: usize) -> T
+    where T: Zero + Clone + AddAssign<T>,
+          for<'a> T: Mul<&'a T, Output = T>,
+          for<'a> &'a T: Neg<Output = T>,
+          for<'a, 'b> &'a T: Mul<&'b T, Output = T> +
+                             Sub<&'b T, Output = T>,
+{
+    if size == 1 {
+        m[0][0].clone()
+    } else {
+        let mut tmp = Vector::of_vectors(size, size);
+        let mut d = T::zero();
+        let mut sign = 1;
+
+        for f in 0..size {
+            get_cofactor::<T>(&mut tmp, m, 0, f, size);
+
+            if sign == -1 {
+                d += &-&m[0][f] * &determinant::<T>(&tmp, size - 1);
+            } else {
+                d += &m[0][f] * &determinant::<T>(&tmp, size - 1);
+            }
+
+            sign = -sign;
+        }
+
+        d
+    }
+}
+
+#[inline]
+fn adjoint<T>(out: &mut Vector<Vector<T>>, m: &Vector<Vector<T>>, size: usize)
+    where T: One + Zero + Clone + AddAssign<T>,
+          for<'a> T: Mul<&'a T, Output = T>,
+          for<'a> &'a T: Neg<Output = T>,
+          for<'a, 'b> &'a T: Mul<&'b T, Output = T> +
+                             Sub<&'b T, Output = T>,
+{
+    if size == 1 {
+        out[0][0] = T::one();
+    } else {
+        let mut sign;
+        let mut tmp = Vector::of_vectors(size, size);
+
+        for i in 0..size {
+            for j in 0..size {
+                get_cofactor::<T>(&mut tmp, m, i, j, size);
+                sign = if (i + j) % 2 == 0 {1} else {-1};
+
+                if sign == -1 {
+                    out[j][i] = -&determinant::<T>(&tmp, size - 1);
+                } else {
+                    out[j][i] = determinant::<T>(&tmp, size - 1);
+                }
+            }
+        }
+    }
+}
+
+#[inline]
+fn inverse<T>(out: &mut Vector<Vector<T>>, m: &Vector<Vector<T>>, size: usize)
+    where T: One + Zero + Clone + AddAssign<T>,
+          for<'a> T: Mul<&'a T, Output = T>,
+          for<'a> &'a T: PartialEq + Neg<Output = T>,
+          for<'a, 'b> &'a T: Div<&'b T, Output = T> +
+                             Mul<&'b T, Output = T> +
+                             Sub<&'b T, Output = T>,
+{
+    let d = determinant::<T>(m, size);
+
+    if &d == &T::zero() {
+        panic!("can not find the inverse matrix")
+    } else {
+        let mut adj = Vector::of_vectors(size, size);
+        adjoint::<T>(&mut adj, m, size);
+
+        for i in 0..size {
+            for j in 0..size {
+                out[i][j] = &adj[i][j] / &d;
+            }
+        }
     }
 }
 
@@ -139,6 +285,21 @@ impl<T: fmt::Debug> fmt::Debug for Matrix<T> {
     }
 }
 
+impl<'out, T> Neg for &'out Matrix<T>
+    where T: One + Zero + Clone + AddAssign<T>,
+          for<'a> T: Mul<&'a T, Output = T>,
+          for<'a> &'a T: PartialEq + Neg<Output = T>,
+          for<'a, 'b> &'a T: Div<&'b T, Output = T> +
+                             Mul<&'b T, Output = T> +
+                             Sub<&'b T, Output = T>,
+{
+    type Output = Matrix<T>;
+
+    #[inline]
+    fn neg(self) -> Self::Output {
+        self.inverse()
+    }
+}
 
 impl<'out, 'a, 'b, T> Matrix<T>
     where T: 'a + 'b + AddAssign<T>,
@@ -272,3 +433,54 @@ macro_rules! impl_bin_op {
 
 impl_bin_op!(Add, add, add, sadd, +);
 impl_bin_op!(Sub, sub, sub, ssub, -);
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+
+    #[test]
+    fn test_mul_matrix_matrix() {
+        let a: Matrix<usize> = Matrix::identity(3, 3);
+        let b: Matrix<usize> = Matrix::identity(3, 3);
+        let c: Matrix<usize> = Matrix::identity(3, 3);
+        let d: Matrix<usize> = &a * &b;
+        
+        assert_eq!(d, c);
+    }
+    #[test]
+    fn test_mul_matrix_scalar() {
+        let a: Matrix<usize> = Matrix::identity(3, 3);
+        let s: usize = 3;
+        let mut c: Matrix<usize> = Matrix::identity(3, 3);
+        c[0][0] = 3;
+        c[1][1] = 3;
+        c[2][2] = 3;
+        let d: Matrix<usize> = &a * &s;
+
+        assert_eq!(d, c);
+    }
+    #[test]
+    fn test_det_matrix_matrix() {
+        let a: Matrix<isize> = Matrix::identity(2, 2);
+        assert_eq!(a.determinant(), 1);
+
+        let b: Matrix<isize> = Matrix::identity(3, 3);
+        assert_eq!(b.determinant(), 1);
+    }
+    #[test]
+    fn test_inverse_matrix() {
+        let a: Matrix<isize> = Matrix::identity(2, 2);
+        let b = a.inverse();
+
+        assert_eq!(b[0][0], 1);
+        assert_eq!(b[1][1], 1);
+
+        let a: Matrix<f32> = Matrix::identity(2, 2);
+        let b = (&a * &2f32).inverse();
+
+        assert_eq!(b[0][0], 0.5);
+        assert_eq!(b[1][1], 0.5);
+    }
+}

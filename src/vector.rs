@@ -34,6 +34,17 @@ impl<T> Vector<T> {
         }
     }
 
+    #[inline]
+    pub fn of_vectors(rows: usize, cols: usize) -> Vector<Vector<T>> {
+        let mut data = Vector::zeroed(rows);
+
+        for row in data.iter_mut() {
+            *row = Vector::zeroed(cols);
+        }
+
+        data
+    }
+
     #[inline(always)]
     pub fn get(&self, i: usize) -> &T {
         unsafe {
@@ -201,3 +212,121 @@ impl_bin_op!(Add, add, add, madd, sadd, +);
 impl_bin_op!(Sub, sub, sub, msub, ssub, -);
 impl_bin_op!(Mul, mul, mul, mmul, smul, *);
 impl_bin_op!(Div, div, div, mdiv, sdiv, /);
+
+
+impl<'a, T> Neg for &'a Vector<T>
+    where &'a T: Neg<Output = T>,
+{
+    type Output = Vector<T>;
+
+    #[inline]
+    fn neg(self) -> Self::Output {
+        let mut out = Vector::zeroed(self.len());
+        for i in 0..self.len() {
+            out[i] = -&self[i];
+        }
+        out
+    }
+}
+
+
+#[cfg(test)]
+mod test {
+    use one::One;
+
+    use super::*;
+
+
+    #[test]
+    fn test_mul_vector_vector() {
+        let a: Vector<usize> = vec_ones(3);
+        let b: Vector<usize> = vec_ones(3);
+        let c: Vector<usize> = vec_ones(3);
+        let d: Vector<usize> = &a * &b;
+        assert_eq!(d, c);
+    }
+    #[test]
+    fn test_mul_vector_matrix() {
+        let a: Vector<usize> = vec_zeros(3);
+        let b: Matrix<usize> = Matrix::identity(3, 3);
+        let c: Vector<usize> = Vector::new(3);
+        let d: Vector<usize> = &a * &b;
+        assert_eq!(d, c);
+    }
+    #[test]
+    fn test_mul_vector_scalar() {
+        let a: Vector<usize> = vec_ones(3);
+        let s: usize = 3;
+        let mut c: Vector<usize> = Vector::new(3);
+        c[0] = 3;
+        c[1] = 3;
+        c[2] = 3;
+        let d: Vector<usize> = &a * &s;
+        assert_eq!(d, c);
+    }
+    #[test]
+    fn test_dot_vectors() {
+        let a: Vector<usize> = vec_ones(3);
+        let b: Vector<usize> = vec_ones(3);
+        let c = a.dot(&b);
+        assert_eq!(c, 3);
+    }
+    #[test]
+    fn test_add_vectors() {
+        let a: Vector<usize> = vec_ones(3);
+        let b: Vector<usize> = vec_ones(3);
+        let c = &a + &b;
+        assert_eq!(c[0], 2);
+        assert_eq!(c[1], 2);
+        assert_eq!(c[2], 2);
+    }
+    #[test]
+    fn test_add_vector_scale() {
+        let a: Vector<usize> = vec_ones(3);
+        let c = &a + &1;
+        assert_eq!(c[0], 2);
+        assert_eq!(c[1], 2);
+        assert_eq!(c[2], 2);
+    }
+    #[test]
+    fn test_sub_vectors() {
+        let a: Vector<usize> = vec_ones(3);
+        let b: Vector<usize> = vec_ones(3);
+        let c = &a - &b;
+        assert_eq!(c[0], 0);
+        assert_eq!(c[1], 0);
+        assert_eq!(c[2], 0);
+    }
+    #[test]
+    fn test_sub_vector_scale() {
+        let a: Vector<usize> = vec_ones(3);
+        let c = &a - &1;
+        assert_eq!(c[0], 0);
+        assert_eq!(c[1], 0);
+        assert_eq!(c[2], 0);
+    }
+    #[test]
+    fn test_neg_vector() {
+        let a: Vector<isize> = vec_ones(3);
+        let b = -&a;
+        assert_eq!(b[0], -1);
+        assert_eq!(b[1], -1);
+        assert_eq!(b[2], -1);
+    }
+
+
+    fn vec_zeros<T: Default + Zero>(count: usize) -> Vector<T> {
+        let mut v = Vector::new(count);
+        for i in 0..count {
+            v[i] = T::zero();
+        }
+        v
+    }
+    fn vec_ones<T: Default + One>(count: usize) -> Vector<T> {
+        let mut v = Vector::new(count);
+        for i in 0..count {
+            v[i] = T::one();
+        }
+        v
+    }
+}

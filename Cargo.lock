@@ -19,7 +19,7 @@ dependencies = [
 [[package]]
 name = "array"
 version = "0.1.0"
-source = "git+https://github.com/nathanfaucett/rs-array.git#0fb5f7d2c6b291728d8f3a8d76cd671601622c63"
+source = "git+https://github.com/nathanfaucett/rs-array.git#0aa5b3c530e7f4041bd6132e7a2cf1d1fd67174a"
 dependencies = [
  "collection_traits 0.1.0 (git+https://github.com/nathanfaucett/rs-collection_traits)",
 ]
